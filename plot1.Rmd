@@ -1,0 +1,120 @@
+---
+title: "first_plots"
+author: "Marcelo Perez Guzman"
+date: "2026-06-22"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{css, echo=FALSE}
+.Rtable1 { 
+  display: block;
+  max-height: 600px;
+  overflow-y: scroll;
+  overflow-x: scroll;
+}
+```
+
+## CHS Project, Table plotting
+
+This is the initial table plots of the CHS project. 
+
+#### Setup 
+```{r start, message=FALSE}
+# install tableone
+library(tableone)
+library(table1)
+
+# get the dataset
+getwd()
+chs <- my_data <- read.csv("CHS_cohortE(in).csv")
+
+
+# factor the variables that need it
+chs$male <- factor(chs$male, levels=c(0,1), labels=c("Female", "Male"))
+chs$hisp <- factor(chs$hisp, levels=c("Hispanic", "Non-Hispanic", "Unknown or Missing"))
+chs$educ <- factor(chs$educ, levels=c(1, 2, 3, 4, 5), labels=c("< 12th Grade", "12th Grade", "Some College", "4 Years of College", "Some Postgrad"))
+chs$race <- factor(chs$race, levels=c("African American", "Asian", "Caucasian", "Mixed", "Others", "Unknown or Missing"))
+chs$asthma <- factor(chs$asthma, levels=c(0,1), labels=c("No", "Yes"))
+chs$BaseGasstove <- factor(chs$BaseGasstove, levels=c(0,1), labels=c("No", "Yes"))
+chs$BasePets <- factor(chs$BasePets, levels=c(0,1), labels=c("No", "Yes"))
+chs$ETS_base <- factor(chs$ETS_base, levels=c(0,1), labels=c("No", "Yes"))
+chs$wheeze <- factor(chs$wheeze, levels=c(0,1), labels=c("No", "Yes"))
+
+
+# put in pretty labels
+label(chs$age) <- "Age"
+label(chs$male) <- "Sex"
+label(chs$race) <- "Race"
+label(chs$hisp) <- "Hispanicity"
+label(chs$bmi) <- "Body-Mass Index"
+label(chs$educ) <- "Education"
+label(chs$pm25) <- "PM25"
+label(chs$sulfate) <- "Sulfate"
+label(chs$nitrate) <- "Nitrate"
+label(chs$wheeze) <- "Wheeze"
+label(chs$fev1) <- "FEV1"
+label(chs$fvc) <- "FVC"
+label(chs$ec) <- "Elemental Carbon"
+label(chs$dust) <- "Dust"
+label(chs$asthma) <- "Asthma"
+str(chs)
+```
+
+## Table 1
+
+This is what shows up after creating a table with the tableone package, which has the mean and the standard deviation of the variables
+
+```{r tableone_pck, echo=FALSE}
+# Tableone package, includes mean and standard deviation
+myvars <- c("age", "male", "race", "hisp", "bmi", "educ", "pm25", "sulfate", "nitrate", "wheeze","fev1", "fvc")
+CreateTableOne(data = chs, vars = myvars)
+```
+
+This is using the table1 package instead of tableone, creates a publication ready table
+
+This table is on the demographics of the participants in the study
+```{r towndem, echo=FALSE}
+# table1 package, creates better visual tables
+
+table1(~ age + male + race + hisp + bmi + educ | townabbr, data=chs, render.continuous = c(. = "Mean (SD)"))
+
+
+# + pm25 + sulfate + nitrate + wheeze + fev1 + fvc
+
+```
+
+
+And this is a table of the polution levels in each town
+
+```{r townpollution, echo=FALSE}
+table1(~ pm25 + sulfate + nitrate + dust + ec | townabbr, data=chs, render.continuous = c(. = "Mean (SD)"))
+```
+
+## Stratified stuff
+
+Things to stratify by:
+- town + lung capacity
+- race/hisp + lung capacity
+- ETS secondhand smoke + lung capacity
+- BMI + lung capacity
+- race + secondhand smoke
+- plants + lung capacity
+- homebuilt + race/hisp
+- homebuilt + lung capacity
+
+Town + lung Capacity
+```{r townlungcap}
+table1(~ wheeze + fev1 + fvc + asthma | townabbr, data=chs, render.continuous = c(. = "Mean (SD)"))
+```
+
+
+#race + lung Capacity
+```{r townlungcap}
+table1(~ wheeze + fev1 + fvc + asthma | educ, data=chs, render.continuous = c(. = "Mean (SD)"))
+```

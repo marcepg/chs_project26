@@ -1,0 +1,96 @@
+---
+title: "DescriptiveStats_CHS"
+author: "Jorden Patino"
+date: "2026-06-22"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Loading in Dataset
+```{r setup, include=FALSE}
+library(readr)
+CHS_cohortE_in_ <- read_csv("CHS_cohortE(in).csv")
+View(CHS_cohortE_in_)
+```
+
+## Determining variable types 
+```{r}
+CHS = CHS_cohortE_in_
+str(CHS)
+```
+
+## Converting characters to categorical variables
+```{r}
+CHS$townabbr = factor(CHS$townabbr)
+CHS$male = factor(CHS$male)
+CHS$race = factor(CHS$race)
+CHS$hisp = factor(CHS$hisp)
+CHS$asthma = factor(CHS$asthma)
+CHS$educ = factor(CHS$educ, levels = 1:5, labels = c('< Grade 12','Grade 12',
+   'Some Post High-School', 'College', 'Some Post-Grad'))                         
+CHS$BaseGasstove = factor(CHS$BaseGasstove)
+CHS$BasePets = factor(CHS$BasePets)
+CHS$ETS_base = factor(CHS$ETS_base)
+CHS$wheeze = factor(CHS$wheeze)
+str(CHS)
+```
+
+
+
+## Univariate Descriptive Stats for All Categorical Variables (Barplots)
+```{r}
+
+table(CHS$townabbr) ## count of people in each community 
+barplot(table(CHS$townabbr), main = 'Community')
+
+table(CHS$male)
+barplot(table(CHS$male), main = 'Sex')
+
+table(CHS$race)
+par(mar = c(4, 10, 4, 2))
+barplot(table(CHS$race), main = 'Race', horiz = TRUE, las = 1)
+
+table(CHS$hisp)
+barplot(table(CHS$hisp), main = 'Hispanicity')
+
+table(CHS$asthma)
+barplot(table(CHS$asthma), main = 'Asthma')
+
+table(CHS$educ)
+par(mar = c(7, 4, 4, 2) + 0.01)
+barplot(table(CHS$educ), main = 'Parental Education', las = 2, cex.names = .6)
+
+table(CHS$BaseGasstove)
+barplot(table(CHS$BaseGasstove), main = 'Gas Stove in House')
+
+table(CHS$BasePets)
+barplot(table(CHS$BasePets), main = 'Pets in House')
+
+table(CHS$ETS_base)
+barplot(table(CHS$ETS_base), main = 'Second-Hand Smoke')
+
+table(CHS$wheeze)
+barplot(table(CHS$wheeze), main = 'Wheeze')
+```
+
+## Bivariate Descriptive Stats for all Categorical Variables 
+```{r}
+boxplot(CHS$nitrate ~ CHS$townabbr, main = 'Nitrate Concentration by Town', xlab = 'Town', ylab = 'Nitrate Concentration', col = 'steelblue') ## quantitative vs. categorical (side-by-side boxplot)
+
+boxplot(CHS$fev1 ~ CHS$male, main = 'Forced Expiratory Volume (in 1 sec) by Gender', xlab = 'Gender', ylab = 'FEV1', col = 'steelblue') 
+
+boxplot(CHS$pm25 ~ CHS$asthma, main = 'Particulate Matter Concentration by Asthma', xlab = 'Asthma', ylab = 'Particulate Matter Concentration', col = 'steelblue') 
+
+
+boxplot(CHS$height ~ CHS$male, main = 'Height by Sex', xlab = 'Gender',
+        ylab = 'Height', col = 'steelblue')
+
+CHS$asthma <- factor(CHS$asthma, levels = c(0, 1), labels = c("Non-Asthmatic", "Asthmatic"))
+
+mosaicplot(CHS$educ ~ CHS$asthma, main = 'Asthma by Parental Education Level', xlab = 'Parental Education Level', ylab = 'Children with Asthma', col = 'gray90')
+
+mosaicplot(CHS$educ ~ CHS$hisp, xlab = 'Parental Education', 
+           ylab = 'Ethnicity', col = 'gray90', las=1, main = 'Ethnicity vs. Parental Education') ## categorical vs. categorical 
+```
+

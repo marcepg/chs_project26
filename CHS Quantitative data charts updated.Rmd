@@ -1,0 +1,267 @@
+---
+title: "CHS"
+author: "T Smith"
+date: "2026-06-22"
+output: html_document
+---
+
+## R Markdown
+
+More descriptive stats for data set CHS project
+
+##Importing data
+
+```{r}
+read.csv("CHS_cohortE(in).csv")
+data <- read.csv("CHS_cohortE(in).csv")
+head(data)
+``` 
+## Quantitative data charts
+
+
+install.packages("ggplot2")
+
+
+
+```{r} 
+## There are cleaner plots with 'ggplot2'
+library(ggplot2)
+
+numeric_data <- data[sapply(data, is.numeric)]
+
+for (col in names(numeric_data)) {
+print(
+  ggplot(data, aes_string(x = col)) + 
+  geom_histogram(fill = "blue", bins = 30) + 
+  ggtitle(paste("Histogram of", col))
+)
+}
+```
+
+```{r} 
+## check length
+length(data$male)
+length(data$stove)
+length(data$pets)
+```
+
+
+```{r} 
+## get 2x2 tables to check dependence of variable
+table(data$male, data$asthma)
+
+vars <- c("male", "asthma")
+
+for (v in vars) {
+  print(v)
+  print(table(data$asthma, data[[v]]))
+}
+
+vars <- c("male", "stove", "pets")
+
+```
+
+```{r} 
+## getting only TRUE quantitative variables
+
+quant_vars <- names(data)[sapply(data, function(x) {
+  is.numeric(x) && !all(na.omit(unique(x)) %in% c(0,1))
+})]
+
+quant_vars
+
+prop.table(table(data$asthma, data$male))
+```
+
+```{r}
+## plot quantitative variables
+
+for (v in quant_vars) {
+  hist(data[[v]],
+       main = paste("Histogram of", v),
+       xlab = v)
+}
+
+for (v in quant_vars) {
+  boxplot(data[[v]] ~ data$asthma,
+          main = paste(v, "vs Asthma"),
+          xlab = "Asthma",
+          ylab = v)
+}
+```
+
+```{r} 
+## comparing numeric vs groups usint t test
+
+for (v in quant_vars) {
+  cat("\n====================\n")
+  cat("Variable:", v, "\n")
+  
+  temp <- na.omit(data[, c(v, "asthma")])
+  print(t.test(temp[[v]] ~ temp$asthma))
+}
+```
+
+```{r} 
+## Checking for significant variables + getting results
+
+results <- data.frame(
+  variable = character(),
+  p_value = numeric(),
+  significant = character()
+)
+
+for (v in quant_vars) {
+  temp <- na.omit(data[, c(v, "asthma")])
+  test <- t.test(temp[[v]] ~ temp$asthma)
+  
+  results <- rbind(results, data.frame(
+    variable = v,
+    p_value = test$p.value,
+    significant = ifelse(test$p.value < 0.05, "YES", "NO")
+  ))
+}
+results 
+
+## pulling significant variables
+
+significant_vars <- results[results$p.value < 0.05, ]
+significant_vars
+
+##sorting by most significant
+results[order(results$p_value), ]
+
+results$decision <- ifelse(results$p_value < 0.05, "Significant", "Not Significant")
+```
+
+```{r}
+## bmi vs age histo / scatterplot
+
+hist(data$bmi,
+     col = rgb(1, 0, 0, 0.5),
+     xlim = range(c(data$bmi, data$age)),
+     main = "BMI vs Age Distribution",
+     xlab = "Values")
+## Red = BMI, Blue = Age
+
+hist(data$age,
+     col = rgb(0, 0, 1, 0.5),
+     add = TRUE)
+## Histogram was made to compare distributions, although BMI and Age are different scales
+
+plot(data$age, data$bmi,
+     main = "BMI vs Age",
+     xlab = "Age",
+     ylab = "BMI")
+abline(lm(bmi ~ age, data = data), col = "blue")
+
+```
+```{r}
+## Trying Linear Regression w/ FEV Attempt 1
+
+numeric_data <- data[, sapply(data, is.numeric)]
+
+model <- lm(fev1 ~ ., data = numeric_data)
+summary(model)
+```
+```{r}
+## Trying Linear Regression w/ FEV Attempt 2
+
+numeric_only <- data[, sapply(data, function(x) {
+  is.numeric(x) && length(unique(x)) > 2 
+})]
+
+model <- lm(fev1 ~ ., data = numeric_only)
+summary(model)
+
+names(numeric_only)
+```
+```{r}
+## Attempt 3 - FEV 
+
+model  <- lm(fev1 ~ . - educ - id - BaseGasstove - BasePets - male - ETS_base - wheeze - asthma - townabbr - hisp - race, data = data)
+
+summary(model)
+```
+```{r}
+## Scatterplot w/ regression line ~ FEV1
+
+ggplot(data = data, aes(x = age, y = fev1)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "FEV1 vs Age",
+       x = "Age",
+       y = "FEV1")
+
+ggplot(data = data, aes(x = male, y = fev1)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "FEV1 vs Male(sex)",
+       x = "Male",
+       y = "FEV1")
+
+ggplot(data = data, aes(x = bmi, y = fev1)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "FEV1 vs BMI",
+       x = "BMI",
+       y = "FEV1")
+## Each plot compares FEV1 to a continuous variable (age, sex, bmi) + removed 17 rows containing non-finite outside scale range and missing values/ values outside scale
+```
+```{r}
+## Scatterplot w/ regression line ~ FVC
+
+ggplot(data = data, aes(x = age, y = fvc)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "FEV1 vs Age",
+       x = "Age",
+       y = "FVC")
+
+ggplot(data = data, aes(x = male, y = fvc)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "FEV1 vs Male(sex)",
+       x = "Male",
+       y = "FVC")
+
+ggplot(data = data, aes(x = bmi, y = fvc)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "FEV1 vs BMI",
+       x = "BMI",
+       y = "FVC")
+## Each plot compares FVC to a continuous variable (age, sex, bmi) + removed 4 rows containing non-finite outside scale range and missing values/ values outside scale
+```
+
+```{r}
+##Trying out Logistic Regression FEV vs Asthma
+
+table(data$asthma)
+
+model <- glm(asthma ~ fev1, data = data, family = binomial)
+summary(model)
+
+exp(coef(model))
+
+exp(confint(model))
+
+clean_data <- na.omit(data)
+
+model <- glm(asthma ~ fev1,
+             data = clean_data,
+             family= binomial)
+
+clean_data$predicted_prob <- predict(model, type = "response")
+
+#plotting logistic curve
+library(ggplot2)
+
+ggplot(data, aes(x = fev1, y = asthma)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+  labs(title = "Logistic Regression: Asthma vs FEV1")
+## removed 21 rows containing non-finite outside scale range and missing values/ values outside scale
+
+```
+
